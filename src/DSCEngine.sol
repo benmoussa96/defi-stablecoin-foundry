@@ -56,6 +56,8 @@ contract DSCEngine is ReentrancyGuard {
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
         }
+
+        i_DSCAddress = DecentralizedStableCoin(DSCAddress);
     }
 
     function depositCollateralAndMintDSC() external {}
