@@ -7,8 +7,8 @@ import {ERC20Mock} from "../test/mocks/ERC20Mock.sol";
 
 contract HelperConfig is Script {
     struct NetworkConfig {
-        address wethPriceFeed;
-        address wbtcPriceFeed;
+        address ethPriceFeed;
+        address btcPriceFeed;
         address weth;
         address wbtc;
         uint256 deployerKey;
@@ -31,8 +31,8 @@ contract HelperConfig is Script {
 
     function getSepoliaEthConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
-            wethPriceFeed: 0x694AA1769357215DE4FAC081bf1f309aDC325306,
-            wbtcPriceFeed: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43,
+            ethPriceFeed: 0x694AA1769357215DE4FAC081bf1f309aDC325306,
+            btcPriceFeed: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43,
             weth: 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9,
             wbtc: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
             deployerKey: vm.envUint("PRIVATE_KEY")
@@ -40,7 +40,7 @@ contract HelperConfig is Script {
     }
 
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
-        if (activeNetworkConfig.wethPriceFeed != address(0)) {
+        if (activeNetworkConfig.ethPriceFeed != address(0)) {
             return activeNetworkConfig;
         }
 
@@ -52,8 +52,8 @@ contract HelperConfig is Script {
         vm.stopBroadcast();
 
         return NetworkConfig({
-            wethPriceFeed: address(ethUSDPriceFeedMock),
-            wbtcPriceFeed: address(btcUSDPriceFeedMock),
+            ethPriceFeed: address(ethUSDPriceFeedMock),
+            btcPriceFeed: address(btcUSDPriceFeedMock),
             weth: address(wethMock),
             wbtc: address(wbtcMock),
             deployerKey: DEFAULT_ANVIL_KEY
