@@ -60,7 +60,7 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     // Constructor    //
-    constructor(address DSCAddress, address[] memory tokenAddresses, address[] memory priceFeedAddresses) {
+    constructor(address DSCAddress, address[] memory priceFeedAddresses, address[] memory tokenAddresses) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert DSCEngine_TokensAndPriceFeedsMustBeSameLength();
         }

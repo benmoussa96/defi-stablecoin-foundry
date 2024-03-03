@@ -5,20 +5,17 @@ import {ERC20Burnable, ERC20} from "@openzeppelin/contracts/token/ERC20/extensio
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
-@title DecentralizedStableCoin
-@author Ghaieth BEN MOUSSA (The Chain Genius)
-@notice This smart contract is the tokenized implementation of our DSCEngine stablecoin logic.
-@dev Collateral: ETH or BTC, Minting: Algorithmic, Stability: Pegged to USD
+ * @title DecentralizedStableCoin
+ * @author Ghaieth BEN MOUSSA (The Chain Genius)
+ * @notice This smart contract is the tokenized implementation of our DSCEngine stablecoin logic.
+ * @dev Collateral: ETH or BTC, Minting: Algorithmic, Stability: Pegged to USD
  */
-
 contract DecentralizedStableCoin is ERC20Burnable, Ownable {
     error DecentralizedStableCoin_InvalidAmount();
     error DecentralizedStableCoin_InsufficientBalance();
     error DecentralizedStableCoin_InvalidAddress();
 
-    constructor(
-        address _initialOwner
-    ) ERC20("DecentralizedStableCoin", "DSC") Ownable(_initialOwner) {}
+    constructor(address _initialOwner) ERC20("DecentralizedStableCoin", "DSC") Ownable(_initialOwner) {}
 
     function burn(uint256 _amount) public override onlyOwner {
         uint256 balance = balanceOf(msg.sender);
@@ -33,10 +30,7 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
         super.burn(_amount);
     }
 
-    function mint(
-        address _to,
-        uint256 _amount
-    ) external onlyOwner returns (bool) {
+    function mint(address _to, uint256 _amount) external onlyOwner returns (bool) {
         if (_to == address(0)) {
             revert DecentralizedStableCoin_InvalidAddress();
         }
