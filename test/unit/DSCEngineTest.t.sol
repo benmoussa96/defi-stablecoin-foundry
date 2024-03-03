@@ -6,6 +6,7 @@ import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../../src/DSCEngine.sol";
+import {ERC20Mock} from "../mocks/ERC20Mock.sol";
 
 contract DSCEngineTest is Test {
     DeployDSC deployer;
@@ -27,6 +28,8 @@ contract DSCEngineTest is Test {
         deployer = new DeployDSC();
         (config, dsc, engine) = deployer.run();
         (ethPriceFeed, btcPriceFeed, weth, wbtc, deployerKey) = config.activeNetworkConfig();
+
+        ERC20Mock(weth).mint(USER, STARTING_BALANCE);
     }
 
     // Price Tests
@@ -35,5 +38,14 @@ contract DSCEngineTest is Test {
         uint256 expectedUSD = 45000e18; // 15e18 * $3000/ETH = 45,000e18
         uint256 actualUSD = engine.getUSDValue(weth, ethAmount);
         assertEq(expectedUSD, actualUSD);
+    }
+
+    // Deposit Collateral Tests
+    function testRevertIfZeroCollateral() public {
+        vm.startPrank(USER);
+        ERC20Mock(weth).approve(address(dsc), COLLATERAL_AMOUNT);
+        vm.expectRevert(DSCEngine.DSCEngine_InvalidAmount.selector);
+        engine.depositCollateral(weth, 0);
+        vm.stopPrank();
     }
 }

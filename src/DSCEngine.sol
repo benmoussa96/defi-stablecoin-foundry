@@ -42,7 +42,8 @@ contract DSCEngine is ReentrancyGuard {
     mapping(address user => uint256 amount) private s_DSCMinted;
 
     // Events       //
-    event collateralDEposited(address indexed user, address indexed token, uint256 indexed amount);
+    event collateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
+    event collateralRedeemed(address indexed user, address indexed token, uint256 indexed amount);
 
     // Modifiers    //
     modifier greaterThanZero(uint256 _amount) {
@@ -74,24 +75,48 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     // External Functions    //
+    /**
+     * @notice This function will deposite your collateral & mint DSC in one transaction
+     * @notice Follows CEI pattern
+     * @param collateralAddress The address of the token to deposit as collateral
+     * @param collateralAmount The amount of collateral to deposit
+     * @param amountDSCToMint The amount of of DecentralizedStableCoin to mint
+     */
+    function depositCollateralAndMintDSC(address collateralAddress, uint256 collateralAmount, uint256 amountDSCToMint)
+        external
+    {
+        depositCollateral(collateralAddress, collateralAmount);
+        mintDSC(amountDSCToMint);
+    }
 
-    function depositCollateralAndMintDSC() external {}
+    /**
+     * @notice This function will redeem your collateral & burn DSC in one transaction
+     * @notice Follows CEI pattern
+     * @param collateralAddress The address of the token to deposit as collateral
+     * @param collateralAmount The amount of collateral to deposit
+     * @param amountDSCToBurn The amount of of DecentralizedStableCoin to burn
+     */
+    function redeemCollateralAndBurnDSC(address collateralAddress, uint256 collateralAmount, uint256 amountDSCToBurn)
+        external
+    {
+        burnDSC(amountDSCToBurn);
+        redeemCollateral(collateralAddress, collateralAmount);
+    }
 
-    function redeemCollateralForDSC() external {}
-
+    // Public Functions    //
     /**
      * @notice Follows CEI pattern
      * @param collateralAddress The address of the token to deposit as collateral
      * @param collateralAmount The amount of collateral to deposit
      */
     function depositCollateral(address collateralAddress, uint256 collateralAmount)
-        external
+        public
         greaterThanZero(collateralAmount)
         isTokenAllowed(collateralAddress)
         nonReentrant
     {
         s_collateralDeposited[msg.sender][collateralAddress] += collateralAmount;
-        emit collateralDEposited(msg.sender, collateralAddress, collateralAmount);
+        emit collateralDeposited(msg.sender, collateralAddress, collateralAmount);
 
         bool success = IERC20(collateralAddress).transferFrom(msg.sender, address(this), collateralAmount);
         if (!success) {
@@ -99,13 +124,10 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function redeemCollateral() external {}
-
     /**
-     *
      * @param amountDSCToMint The amount of DecentralizedStableCoint to mint
      */
-    function mintDSC(uint256 amountDSCToMint) external greaterThanZero(amountDSCToMint) nonReentrant {
+    function mintDSC(uint256 amountDSCToMint) public greaterThanZero(amountDSCToMint) nonReentrant {
         s_DSCMinted[msg.sender] += amountDSCToMint;
 
         _checkHealthFactor(msg.sender);
@@ -116,7 +138,40 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function burnDSC() external {}
+    /**
+     * @notice Follows CEI pattern
+     * @param collateralAddress The address of the token to redeem as collateral
+     * @param collateralAmount The amount of collateral to redeem
+     */
+    function redeemCollateral(address collateralAddress, uint256 collateralAmount)
+        public
+        greaterThanZero(collateralAmount)
+        isTokenAllowed(collateralAddress)
+        nonReentrant
+    {
+        s_collateralDeposited[msg.sender][collateralAddress] -= collateralAmount;
+        emit collateralRedeemed(msg.sender, collateralAddress, collateralAmount);
+
+        bool success = IERC20(collateralAddress).transfer(msg.sender, collateralAmount);
+        if (!success) {
+            revert DSCEngine_TransferFailed();
+        }
+
+        _checkHealthFactor(msg.sender);
+    }
+
+    /**
+     * @param amountDSCToBurn The amount of DecentralizedStableCoint to burn
+     */
+    function burnDSC(uint256 amountDSCToBurn) public greaterThanZero(amountDSCToBurn) nonReentrant {
+        s_DSCMinted[msg.sender] -= amountDSCToBurn;
+        bool success = i_DSC.transferFrom(msg.sender, address(this), amountDSCToBurn);
+        if (!success) {
+            revert DSCEngine_TransferFailed();
+        }
+
+        i_DSC.burn(amountDSCToBurn);
+    }
 
     function liquidate() external {}
 
