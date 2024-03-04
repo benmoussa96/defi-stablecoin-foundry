@@ -21,8 +21,8 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 contract DSCEngine is ReentrancyGuard {
     // ERRORS       //
     error DSCEngine__InvalidAmount();
-    error DSCEngine__TokensAndPriceFeedsMustBeSameLength();
-    error DSCEngine__TokenNotAllowed();
+    error DSCEngine__CollateralTokensAndPriceFeedsMustBeSameLength();
+    error DSCEngine__CollateralNotSupported();
     error DSCEngine__TransferFailed();
     error DSCEngine__MintFailed();
     error DSCEngine__HeathFactorOk();
@@ -56,22 +56,22 @@ contract DSCEngine is ReentrancyGuard {
         _;
     }
 
-    modifier isTokenAllowed(address token) {
+    modifier isCollateralSupported(address token) {
         if (s_priceFeeds[token] == address(0)) {
-            revert DSCEngine__TokenNotAllowed();
+            revert DSCEngine__CollateralNotSupported();
         }
         _;
     }
 
     // CONSTRUCTOR    //
-    constructor(address DSCAddress, address[] memory priceFeedAddresses, address[] memory tokenAddresses) {
-        if (tokenAddresses.length != priceFeedAddresses.length) {
-            revert DSCEngine__TokensAndPriceFeedsMustBeSameLength();
+    constructor(address DSCAddress, address[] memory priceFeedAddresses, address[] memory collateralAddresses) {
+        if (collateralAddresses.length != priceFeedAddresses.length) {
+            revert DSCEngine__CollateralTokensAndPriceFeedsMustBeSameLength();
         }
 
-        for (uint256 i = 0; i < tokenAddresses.length; i++) {
-            s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
-            s_collateralTokens.push(tokenAddresses[i]);
+        for (uint256 i = 0; i < collateralAddresses.length; i++) {
+            s_priceFeeds[collateralAddresses[i]] = priceFeedAddresses[i];
+            s_collateralTokens.push(collateralAddresses[i]);
         }
 
         i_DSC = DecentralizedStableCoin(DSCAddress);
@@ -149,7 +149,7 @@ contract DSCEngine is ReentrancyGuard {
     function _depositCollateral(address collateralAddress, uint256 collateralAmount)
         private
         greaterThanZero(collateralAmount)
-        isTokenAllowed(collateralAddress)
+        isCollateralSupported(collateralAddress)
         nonReentrant
     {
         s_collateralDeposited[msg.sender][collateralAddress] += collateralAmount;
@@ -248,5 +248,9 @@ contract DSCEngine is ReentrancyGuard {
 
     function getHealthFactor(address user) external view returns (uint256) {
         return _healthFactor(user);
+    }
+
+    function getAccountInfo(address user) external view returns (uint256 totalDSCMinted, uint256 collateralUSD) {
+        (totalDSCMinted, collateralUSD) = _getAccountInfo(user);
     }
 }
