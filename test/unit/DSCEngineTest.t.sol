@@ -36,7 +36,7 @@ contract DSCEngineTest is Test {
     function testUSDValue() public {
         uint256 ethAmount = 15e18;
         uint256 expectedUSD = 45000e18; // 15e18 * $3000/ETH = 45,000e18
-        uint256 actualUSD = engine.getUSDValue(weth, ethAmount);
+        uint256 actualUSD = engine.getCollateralValueInUSD(weth, ethAmount);
         assertEq(expectedUSD, actualUSD);
     }
 
@@ -44,7 +44,7 @@ contract DSCEngineTest is Test {
     function testRevertIfZeroCollateral() public {
         vm.startPrank(USER);
         ERC20Mock(weth).approve(address(dsc), COLLATERAL_AMOUNT);
-        vm.expectRevert(DSCEngine.DSCEngine_InvalidAmount.selector);
+        vm.expectRevert(DSCEngine.DSCEngine__InvalidAmount.selector);
         engine.depositCollateral(weth, 0);
         vm.stopPrank();
     }
