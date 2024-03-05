@@ -88,8 +88,8 @@ contract DSCEngine is ReentrancyGuard {
     function depositCollateralAndMintDSC(address collateralAddress, uint256 collateralAmount, uint256 amountDSCToMint)
         external
     {
-        _depositCollateral(collateralAddress, collateralAmount);
-        _mintDSC(amountDSCToMint);
+        depositCollateral(collateralAddress, collateralAmount);
+        mintDSC(amountDSCToMint);
     }
 
     /**
@@ -102,8 +102,8 @@ contract DSCEngine is ReentrancyGuard {
     function redeemCollateralAndBurnDSC(address collateralAddress, uint256 collateralAmount, uint256 amountDSCToBurn)
         external
     {
-        _burnDSC(msg.sender, msg.sender, amountDSCToBurn);
-        _redeemCollateral(msg.sender, msg.sender, collateralAddress, collateralAmount);
+        burnDSC(amountDSCToBurn);
+        redeemCollateral(collateralAddress, collateralAmount);
         _checkHealthFactor(msg.sender);
     }
 
@@ -140,14 +140,14 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    // PRIVATE & INTERNAL VIEW FUNCTIONS    //
+    // PUBLIC FUNCTIONS
     /**
      * @notice Follows CEI pattern
      * @param collateralAddress The address of the token to deposit as collateral
      * @param collateralAmount The amount of collateral to deposit
      */
-    function _depositCollateral(address collateralAddress, uint256 collateralAmount)
-        private
+    function depositCollateral(address collateralAddress, uint256 collateralAmount)
+        public
         greaterThanZero(collateralAmount)
         isCollateralSupported(collateralAddress)
         nonReentrant
@@ -164,7 +164,7 @@ contract DSCEngine is ReentrancyGuard {
     /**
      * @param amountDSCToMint The amount of DecentralizedStableCoint to mint
      */
-    function _mintDSC(uint256 amountDSCToMint) private greaterThanZero(amountDSCToMint) nonReentrant {
+    function mintDSC(uint256 amountDSCToMint) public greaterThanZero(amountDSCToMint) nonReentrant {
         s_DSCMinted[msg.sender] += amountDSCToMint;
 
         _checkHealthFactor(msg.sender);
@@ -177,6 +177,30 @@ contract DSCEngine is ReentrancyGuard {
 
     /**
      * @notice Follows CEI pattern
+     * @param collateralAddress The address of the token to redeem as collateral
+     * @param collateralAmount The amount of collateral to redeem
+     */
+    function redeemCollateral(address collateralAddress, uint256 collateralAmount)
+        private
+        greaterThanZero(collateralAmount)
+        isCollateralSupported(collateralAddress)
+        nonReentrant
+    {
+        _redeemCollateral(msg.sender, msg.sender, collateralAddress, collateralAmount);
+        _checkHealthFactor(msg.sender);
+    }
+
+    /**
+     * @param amountDSCToBurn The amount of DecentralizedStableCoint to burn
+     */
+    function burnDSC(uint256 amountDSCToBurn) private greaterThanZero(amountDSCToBurn) nonReentrant {
+        _burnDSC(msg.sender, msg.sender, amountDSCToBurn);
+    }
+
+    // PRIVATE & INTERNAL VIEW FUNCTIONS    //
+    /**
+     * @param from The address of the original holder of the collateral
+     * @param to The address of the user who will receive the collateral
      * @param collateralAddress The address of the token to redeem as collateral
      * @param collateralAmount The amount of collateral to redeem
      */
@@ -252,5 +276,29 @@ contract DSCEngine is ReentrancyGuard {
 
     function getAccountInfo(address user) external view returns (uint256 totalDSCMinted, uint256 collateralUSD) {
         (totalDSCMinted, collateralUSD) = _getAccountInfo(user);
+    }
+
+    function getPrecision() external pure returns (uint256) {
+        return PRECISION;
+    }
+
+    function getFeedPrecision() external pure returns (uint256) {
+        return FEED_PRECISION;
+    }
+
+    function getLiquidationThreshold() external pure returns (uint256) {
+        return LIQUIDATION_THRESHOLD;
+    }
+
+    function getLiquidationBonus() external pure returns (uint256) {
+        return LIQUIDATION_BONUS;
+    }
+
+    function getLiquidationPrecision() external pure returns (uint256) {
+        return LIQUIDATION_PRECISION;
+    }
+
+    function getMinHealthFactor() external pure returns (uint256) {
+        return MIN_HEALTH_FACTOR;
     }
 }
