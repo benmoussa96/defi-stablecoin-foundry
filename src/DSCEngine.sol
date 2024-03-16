@@ -30,8 +30,8 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__HeathFactorBroken(uint256 userHealthFactor);
 
     // EVENTS       //
-    event collateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
-    event collateralRedeemed(address indexed redeemFrom, address indexed redeemTo, address token, uint256 amount);
+    event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
+    event CollateralRedeemed(address indexed redeemFrom, address indexed redeemTo, address token, uint256 amount);
 
     // VARIABLES   //
     uint256 private constant PRECISION = 1e18;
@@ -45,7 +45,7 @@ contract DSCEngine is ReentrancyGuard {
 
     address[] private s_collateralTokens;
     mapping(address collateralToken => address priceFeed) private s_priceFeeds;
-    mapping(address user => mapping(address collateralToken => uint256 amount)) private s_collateralDeposited;
+    mapping(address user => mapping(address collateralToken => uint256 amount)) private s_CollateralDeposited;
     mapping(address user => uint256 amount) private s_DSCMinted;
 
     // MODIFIERS    //
@@ -152,8 +152,8 @@ contract DSCEngine is ReentrancyGuard {
         isCollateralSupported(collateralAddress)
         nonReentrant
     {
-        s_collateralDeposited[msg.sender][collateralAddress] += collateralAmount;
-        emit collateralDeposited(msg.sender, collateralAddress, collateralAmount);
+        s_CollateralDeposited[msg.sender][collateralAddress] += collateralAmount;
+        emit CollateralDeposited(msg.sender, collateralAddress, collateralAmount);
 
         bool success = IERC20(collateralAddress).transferFrom(msg.sender, address(this), collateralAmount);
         if (!success) {
@@ -205,8 +205,8 @@ contract DSCEngine is ReentrancyGuard {
      * @param collateralAmount The amount of collateral to redeem
      */
     function _redeemCollateral(address from, address to, address collateralAddress, uint256 collateralAmount) private {
-        s_collateralDeposited[from][collateralAddress] -= collateralAmount;
-        emit collateralRedeemed(from, to, collateralAddress, collateralAmount);
+        s_CollateralDeposited[from][collateralAddress] -= collateralAmount;
+        emit CollateralRedeemed(from, to, collateralAddress, collateralAmount);
 
         bool success = IERC20(collateralAddress).transfer(to, collateralAmount);
         if (!success) {
@@ -249,7 +249,7 @@ contract DSCEngine is ReentrancyGuard {
     function getAccountCollateralUSD(address user) public view returns (uint256 collateralUSD) {
         for (uint256 i = 0; i < s_collateralTokens.length; i++) {
             address token = s_collateralTokens[i];
-            uint256 collateralAmount = s_collateralDeposited[user][token];
+            uint256 collateralAmount = s_CollateralDeposited[user][token];
             collateralUSD += getCollateralValueInUSD(token, collateralAmount);
         }
 
