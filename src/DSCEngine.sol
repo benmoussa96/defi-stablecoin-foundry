@@ -22,7 +22,7 @@ contract DSCEngine is ReentrancyGuard {
     // ERRORS       //
     error DSCEngine__InvalidAmount();
     error DSCEngine__CollateralTokensAndPriceFeedsMustBeSameLength();
-    error DSCEngine__CollateralNotSupported();
+    error DSCEngine__CollateralNotSupported(address token);
     error DSCEngine__TransferFailed();
     error DSCEngine__MintFailed();
     error DSCEngine__HeathFactorOk();
@@ -58,7 +58,7 @@ contract DSCEngine is ReentrancyGuard {
 
     modifier isCollateralSupported(address token) {
         if (s_priceFeeds[token] == address(0)) {
-            revert DSCEngine__CollateralNotSupported();
+            revert DSCEngine__CollateralNotSupported(token);
         }
         _;
     }
@@ -170,6 +170,7 @@ contract DSCEngine is ReentrancyGuard {
         _checkHealthFactor(msg.sender);
 
         bool isMintSuccess = i_DSC.mint(msg.sender, amountDSCToMint);
+        
         if (!isMintSuccess) {
             revert DSCEngine__MintFailed();
         }
@@ -234,6 +235,7 @@ contract DSCEngine is ReentrancyGuard {
 
     function _healthFactor(address user) private view returns (uint256) {
         (uint256 totalDSCMinted, uint256 collateralUSD) = _getAccountInfo(user);
+        if (totalDSCMinted == 0) return type(uint256).max;
         uint256 collateralAdjustedForThreshold = (collateralUSD * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         return (collateralAdjustedForThreshold * PRECISION) / totalDSCMinted;
     }
